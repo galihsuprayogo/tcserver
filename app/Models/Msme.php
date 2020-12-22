@@ -13,6 +13,7 @@ class Msme extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'image',
         'latitude',
         'longitude',
     ];

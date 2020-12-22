@@ -25,6 +25,8 @@ Route::group(['prefix' => 'auth'], function () {
 
     Route::group(['middleware' => 'auth:api'], function () {
         Route::get('profile', 'MsmeController@show');
+        Route::post('create', 'MsmeController@store');
+        Route::get('image', 'MsmeController@image');
         Route::get('logout', 'AuthController@logout');
     });
 });

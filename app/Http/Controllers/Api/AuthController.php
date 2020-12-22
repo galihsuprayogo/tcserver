@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\User;
 use App\Models\Msme;
-use Twilio;
+// use Twilio;
 
 class AuthController extends Controller
 {
@@ -69,7 +69,7 @@ class AuthController extends Controller
         if(DB::table('users')->where('phone_number', $req->phone_number)->exists()){
   
             $otp = mt_rand(1000, 9999);
-            Twilio::message('+62'.(int)$req->phone_number, $otp);
+            // Twilio::message('+62'.(int)$req->phone_number, $otp);
             DB::table('users')->where('phone_number', $req->phone_number)->update(['phone_otp' => $otp]);
 
             return response()->json([
