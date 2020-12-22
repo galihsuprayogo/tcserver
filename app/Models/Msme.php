@@ -17,4 +17,9 @@ class Msme extends Model
         'latitude',
         'longitude',
     ];
+
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
 }

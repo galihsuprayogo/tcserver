@@ -27,6 +27,8 @@ Route::group(['prefix' => 'auth'], function () {
         Route::get('profile', 'MsmeController@show');
         Route::post('create', 'MsmeController@store');
         Route::get('image', 'MsmeController@image');
+        Route::post('createProduct', 'ProductController@store');
+        Route::get('product', 'ProductController@show');
         Route::get('logout', 'AuthController@logout');
     });
 });
