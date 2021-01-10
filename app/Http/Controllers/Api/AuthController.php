@@ -56,7 +56,6 @@ class AuthController extends Controller
     public function login(Request $req)
     {
         $validator = Validator::make($req->all(), [
-            'name' => 'required|string',
             'phone_number' => 'required|string'
         ]);
         
@@ -91,8 +90,8 @@ class AuthController extends Controller
 
         if($validator->fails()){
             return response()->json([
-                'message' => 'Login Failed'
-            ], 401);
+                'message' => 'Login Failed',
+            ], 200);
         }
 
         if(DB::table('users')->where('phone_otp', $req->phone_otp)->exists())
@@ -104,26 +103,70 @@ class AuthController extends Controller
             $tokenResult = $user->createToken('Personal Access Token');
             $token = $tokenResult->token;
     
-            $token->save();
+            $token->save(); 
+            
+            if (DB::table('sessions')->where('user_id', $user->id)->exists()){
+                $session = DB::table('sessions')->where('user_id', $user->id)->update([
+                        'user_session' => true
+                ]);
+            } else {
+                $session = DB::table('sessions')->insert([
+                    'user_id' => $user->id,
+                    'user_session' => true
+                ]);
+            }
 
             return response()->json([
                 'token' => $tokenResult->accessToken,
                 'token_type' => 'Bearer',
                 'user' => $user,
-                'message' => 'Login Success'
+                'message' => 'Login Success',
+                'phone_otp' => $user->phone_otp,
             ]);
-
+            
         } else {
             return response()->json([
-                'message' => 'unregistered otp'
-            ], 401); 
+                'message' => 'unregistered otp',
+            ], 201); 
+        }
+    }
+
+    public function session(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            'user_id' => 'required|string|min:1',
+        ]);
+
+        if($validator->fails()){
+            return response()->json([
+                'session' => 0,
+            ], 200);
+        }
+
+        if(DB::table('sessions')->where('user_id', $req->user_id)->exists())
+        {
+            $session = DB::table('sessions')->where('user_id', $req->user_id)->pluck('user_session');
+            $new_session = $session['0'];
+
+            return response()->json([
+                'session' => $new_session,
+                'status' => true
+            ], 200);
+        } else {
+            return response()->json([
+                'session' => 0,
+            ], 200);
         }
     }
 
     public function logout(Request $req)
     {
         $user = $req->user();
-        DB::table('users')->where('phone_number', $user->phone_number)->update(['phone_otp' => null]);
+        DB::table('users')->where('phone_number', $user->phone_number)
+        ->update(['phone_otp' => null]);
+        DB::table('sessions')->where('user_id', $user->id)->update([
+            'user_session' => false
+         ]);
         $req->user()->token()->revoke();
 
         return response()->json([

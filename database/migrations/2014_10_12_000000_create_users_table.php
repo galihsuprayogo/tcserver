@@ -25,6 +25,14 @@ class CreateUsersTable extends Migration
             $table->rememberToken();
             $table->timestamps();
         });
+
+        Schema::create('sessions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->default(0);
+            $table->boolean('user_session')->default(false);
+
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+        });
     }
 
     /**
@@ -34,6 +42,7 @@ class CreateUsersTable extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists('sessions');
         Schema::dropIfExists('users');
     }
 }

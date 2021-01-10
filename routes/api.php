@@ -22,6 +22,7 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('login', 'AuthController@login');
     Route::post('signup', 'AuthController@signup');
     Route::post('verify', 'AuthController@verify');
+    Route::post('session', 'AuthController@session');
 
     Route::group(['middleware' => 'auth:api'], function () {
         Route::get('profile', 'MsmeController@show');
