@@ -23,11 +23,12 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('signup', 'AuthController@signup');
     Route::post('verify', 'AuthController@verify');
     Route::post('session', 'AuthController@session');
-
+    
     Route::group(['middleware' => 'auth:api'], function () {
         Route::get('profile', 'MsmeController@show');
         Route::post('create', 'MsmeController@store');
         Route::get('image', 'MsmeController@image');
+        Route::post('decode', 'MsmeController@decode');
         Route::post('createProduct', 'ProductController@store');
         Route::get('product', 'ProductController@show');
         Route::get('logout', 'AuthController@logout');
