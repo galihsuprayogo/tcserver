@@ -11,7 +11,7 @@ class Product extends Model
 
     protected $guarded = [];
 
-    public function msme()
+    public function store()
     {
         return $this->belongsTo(User::class);
     }

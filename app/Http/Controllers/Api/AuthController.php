@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\User;
-use App\Models\Msme;
+use App\Models\Store;
 // use Twilio;
 
 class AuthController extends Controller
@@ -42,11 +42,11 @@ class AuthController extends Controller
         $id = DB::table('users')->where('phone_number', $req->phone_number)->pluck('id');
         $new_id = $id['0'];
         
-        $msme = new Msme([
+        $store = new Store([
             'user_id' => $new_id,
         ]);
 
-        $msme->save();
+        $store->save();
 
         return response()->json([
             'message' => 'Register Success',

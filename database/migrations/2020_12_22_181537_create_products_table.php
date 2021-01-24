@@ -15,7 +15,7 @@ class CreateProductsTable extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('msme_id');
+            $table->unsignedBigInteger('store_id');
             $table->string('type');
             $table->string('procedure');
             $table->string('output');
@@ -24,7 +24,7 @@ class CreateProductsTable extends Migration
             $table->binary('image')->nullable();
             $table->timestamps();
 
-            $table->foreign('msme_id')->references('id')->on('msmes')->onDelete('cascade');
+            $table->foreign('store_id')->references('id')->on('stores')->onDelete('cascade');
         });
     }
 

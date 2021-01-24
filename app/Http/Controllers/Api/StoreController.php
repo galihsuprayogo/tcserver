@@ -11,17 +11,17 @@ use Illuminate\Support\Facades\File;
 // use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManagerStatic as Image;
-use App\Models\Msme;
+use App\Models\Store;
 
 
-class MsmeController extends Controller
+class StoreController extends Controller
 {
     public function show(Request $req)
     {
         $user = $req->user();
         $profile = DB::table('users')
-                        ->join('msmes', 'users.id', '=', 'msmes.user_id')
-                        ->select('msmes.*')
+                        ->join('stores', 'users.id', '=', 'stores.user_id')
+                        ->select('stores.*')
                         ->where('users.id', $user->id)
                         ->get();
 
@@ -38,12 +38,12 @@ class MsmeController extends Controller
        
         
         $image_name = $image_file->getClientOriginalName();
-        $newPath = public_path() . '/profile_msme/';
+        $newPath = public_path() . '/profile_store/';
         File::makeDirectory($newPath, $mode = 0777, true, true);
         $thumbPath = $newPath . $image_name;
         $thumbImage = Image::make($image_file)->save($thumbPath)->resize(100, 100);
 
-        Msme::where('user_id', $user->id)
+        Store::where('user_id', $user->id)
                     ->update([  'name' => $req->name,
                                 'image' => $thumbPath   ]);
         
@@ -61,12 +61,12 @@ class MsmeController extends Controller
         $image_decode = base64_decode($image);
 
         $image_name = 'kemem.jpeg';
-        $newPath = public_path() . '/profile_msme/';
+        $newPath = public_path() . '/profile_store/';
         File::makeDirectory($newPath, $mode = 0777, true, true);
         $thumbPath = $newPath . $image_name;
         image::make($image_decode)->save($thumbPath)->resize(100,100);
 
-        Msme::where('user_id', $user->id)
+        Store::where('user_id', $user->id)
                     ->update([  'name' => $request->name,
                                 'image' => $thumbPath   ]);
         
@@ -82,7 +82,7 @@ class MsmeController extends Controller
     public function image(Request $req)
     {
         $user = $req->user();
-        $path = DB::table('msmes')->where('user_id', $user->id)->pluck('image');
+        $path = DB::table('stores')->where('user_id', $user->id)->pluck('image');
         $newPath = $path['0'];
         $image = Image::make($newPath);
         $response = Response::make($image->encode('jpg'));
