@@ -115,11 +115,16 @@ class AuthController extends Controller
                     'user_session' => true
                 ]);
             }
-
+            // $store = DB::table('stores')->select('name', 'image')->where('user_id', $user->id)->get();
+            $sid = DB::table('stores')->where('user_id', $user->id)->pluck('id');
+            $new_sid = $sid['0'];
+            $store = Store::find($new_sid);
+            
             return response()->json([
                 'token' => $tokenResult->accessToken,
                 'token_type' => 'Bearer',
                 'user' => $user,
+                'store' => $store,
                 'message' => 'Login Success',
                 'phone_otp' => $user->phone_otp,
             ]);

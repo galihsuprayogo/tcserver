@@ -8,7 +8,7 @@ use App\Http\Requests\ImageRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\File;
-// use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManagerStatic as Image;
 use App\Models\Store;
@@ -30,63 +30,48 @@ class StoreController extends Controller
         ]);   
     }
 
-    public function store(Request $req)
-    {
-        $user = $req->user();
-        $name = $req->name;
-        $image_file = $req->image;
-       
-        
-        $image_name = $image_file->getClientOriginalName();
-        $newPath = public_path() . '/profile_store/';
-        File::makeDirectory($newPath, $mode = 0777, true, true);
-        $thumbPath = $newPath . $image_name;
-        $thumbImage = Image::make($image_file)->save($thumbPath)->resize(100, 100);
-
-        Store::where('user_id', $user->id)
-                    ->update([  'name' => $req->name,
-                                'image' => $thumbPath   ]);
-        
-        return response()->json([
-            'message' => 'success'
-        ]);
-    }
-
-    public function decode(Request $request)
+    public function store(Request $request)
     {
         $user = $request->user();
         $name = $request->name;
-        $image = $request->photo;
-        // $image_encode = base64_encode($image);
-        $image_decode = base64_decode($image);
-
-        $image_name = 'kemem.jpeg';
-        $newPath = public_path() . '/profile_store/';
-        File::makeDirectory($newPath, $mode = 0777, true, true);
-        $thumbPath = $newPath . $image_name;
-        image::make($image_decode)->save($thumbPath)->resize(100,100);
+        $image = $request->photo;      
 
         Store::where('user_id', $user->id)
-                    ->update([  'name' => $request->name,
-                                'image' => $thumbPath   ]);
+                    ->update(['name' => $name,
+                              'image' => $image]);
+        $sid = DB::table('stores')->where('user_id', $user->id)->pluck('id');
+        $new_sid = $sid['0'];
+        $store = Store::find($new_sid);
         
         return response()->json([
-            'message' => 'oke',
-            // 'name' => $name,
-            // 'im' => $image,
-            // 'user' => $user
+            'message' => 'success',
+            'user' => $user,
+            'store' => $store
         ]);
 
     }
 
-    public function image(Request $req)
+    public function image(Request $request)
     {
-        $user = $req->user();
+        $user = $request->user();
         $path = DB::table('stores')->where('user_id', $user->id)->pluck('image');
         $newPath = $path['0'];
-        $image = Image::make($newPath);
-        $response = Response::make($image->encode('jpg'));
-        $response->header('Content-Type', 'image/jpeg');
-        return $response;
+      
+        return response()->json([
+            'message' => 'success',
+            'encode' => $newPath
+        ]);
+
+    }
+
+    public function backupDecode()
+    {
+        // $image_decode = base64_decode($image);
+        // $type = Str::substr($extend, 6);
+        // $image_name = 'profile_store_'.$user->id.'.'.$type;
+        // $newPath = public_path() . '/profile_store/';
+        // File::makeDirectory($newPath, $mode = 0777, true, true);
+        // $thumbPath = $newPath . $image_name;
+        // image::make($image_decode)->save($thumbPath)->resize(100,100);
     }
 }

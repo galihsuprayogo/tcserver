@@ -26,9 +26,8 @@ Route::group(['prefix' => 'auth'], function () {
     
     Route::group(['middleware' => 'auth:api'], function () {
         Route::get('profile', 'StoreController@show');
-        Route::post('create', 'StoreController@store');
         Route::get('image', 'StoreController@image');
-        Route::post('decode', 'StoreController@decode');
+        Route::post('store', 'StoreController@store');
         Route::post('createProduct', 'ProductController@store');
         Route::get('product', 'ProductController@show');
         Route::get('logout', 'AuthController@logout');
