@@ -16,29 +16,17 @@ use App\Models\Store;
 
 class StoreController extends Controller
 {
-    public function show(Request $req)
-    {
-        $user = $req->user();
-        $profile = DB::table('users')
-                        ->join('stores', 'users.id', '=', 'stores.user_id')
-                        ->select('stores.*')
-                        ->where('users.id', $user->id)
-                        ->get();
-
-        return response()->json([
-            'data' => $profile,
-        ]);   
-    }
-
     public function store(Request $request)
     {
         $user = $request->user();
         $name = $request->name;
-        $image = $request->photo;      
+        $image = $request->photo;
+        $address = $request->address;      
 
         Store::where('user_id', $user->id)
                     ->update(['name' => $name,
-                              'image' => $image]);
+                              'image' => $image,
+                              'address' => $address]);
         $sid = DB::table('stores')->where('user_id', $user->id)->pluck('id');
         $new_sid = $sid['0'];
         $store = Store::find($new_sid);
@@ -63,6 +51,22 @@ class StoreController extends Controller
         ]);
 
     }
+    
+    public function show(Request $req)
+    {
+        $user = $req->user();
+        $profile = DB::table('users')
+                        ->join('stores', 'users.id', '=', 'stores.user_id')
+                        ->select('stores.*')
+                        ->where('users.id', $user->id)
+                        ->get();
+
+        return response()->json([
+            'data' => $profile,
+        ]);   
+    }
+
+    
 
     public function backupDecode()
     {

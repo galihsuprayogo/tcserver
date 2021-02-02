@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-// use App\Models\Msme;
 use App\Models\Product;
 
 class ProductController extends Controller
@@ -14,9 +13,9 @@ class ProductController extends Controller
     {
         $user = $req->user();
         $profile = DB::table('users')
-                        ->join('msmes', 'users.id', '=', 'msmes.user_id')
+                        ->join('stores', 'users.id', '=', 'store.user_id')
                         ->where('users.id', $user->id)
-                        ->pluck('msmes.id');
+                        ->pluck('stores.id');
         $profile_id = $profile[0];
 
         $product = new Product([
@@ -25,7 +24,7 @@ class ProductController extends Controller
             'output' => $req->output,
             'grade' => $req->grade,
             'price' => $req->price,
-            'msme_id' => (int) $profile_id
+            'store_id' => (int) $profile_id
         ]);
 
         $product->save();

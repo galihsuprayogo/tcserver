@@ -18,6 +18,7 @@ class CreateStoresTable extends Migration
             $table->unsignedBigInteger('user_id');
             $table->string('name')->nullable();
             $table->binary('image')->nullable();
+            $table->string('address')->nullable();
             $table->decimal('latitude', 15, 13)->nullable();
             $table->decimal('longitude', 15, 12)->nullable();
             $table->timestamps();
