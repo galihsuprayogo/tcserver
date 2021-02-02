@@ -9,21 +9,22 @@ use App\Models\Product;
 
 class ProductController extends Controller
 {
-    public function store(Request $req)
+    public function store(Request $request)
     {
-        $user = $req->user();
+        $user = $request->user();
         $profile = DB::table('users')
-                        ->join('stores', 'users.id', '=', 'store.user_id')
+                        ->join('stores', 'users.id', '=', 'stores.user_id')
                         ->where('users.id', $user->id)
                         ->pluck('stores.id');
         $profile_id = $profile[0];
 
         $product = new Product([
-            'type' => $req->type,
-            'procedure' => $req->procedure,
-            'output' => $req->output,
-            'grade' => $req->grade,
-            'price' => $req->price,
+            'type' => $request->type,
+            'procedure' => $request->procedure,
+            'output' => $request->output,
+            'grade' => $request->grade,
+            'price' => $request->price,
+            'image' => $request->photo,
             'store_id' => (int) $profile_id
         ]);
 
@@ -31,7 +32,8 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'add product success',
-        ], 201);
+            'data' => $profile_id
+        ]);
     }
 
     public function show(Request $req)

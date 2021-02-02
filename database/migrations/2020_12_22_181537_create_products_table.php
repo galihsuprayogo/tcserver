@@ -20,7 +20,7 @@ class CreateProductsTable extends Migration
             $table->string('procedure');
             $table->string('output');
             $table->string('grade');
-            $table->float('price');
+            $table->string('price');
             $table->binary('image')->nullable();
             $table->timestamps();
 
