@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+// use Illuminate\Support\Collection;
 use App\Models\Product;
 
 class ProductController extends Controller
@@ -40,14 +41,20 @@ class ProductController extends Controller
     {
         $user = $req->user();
         $profile = DB::table('users')
-                        ->join('msmes', 'users.id', '=', 'msmes.user_id')
+                        ->join('stores', 'users.id', '=', 'stores.user_id')
                         ->where('users.id', $user->id)
-                        ->pluck('msmes.id');
-        $profile_id = (int) $profile[0];
+                        ->pluck('stores.id');
+        $profile_id = $profile[0];
 
-        $products = Product::where('msme_id', $profile_id)->get();
+        $products = DB::table('products')
+                        ->join('stores', 'products.store_id', '=', 'stores.id')
+                        ->select('products.*')
+                        ->where('stores.id', $profile_id)
+                        ->paginate(1);
+
         return response()->json([
-            'message' => $products,
+            'message' => 'success',
+            'products' => $products
         ], 201);
     }
 }
