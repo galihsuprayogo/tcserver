@@ -19,21 +19,42 @@ class ProductController extends Controller
                         ->pluck('stores.id');
         $profile_id = $profile[0];
 
-        $product = new Product([
-            'type' => $request->type,
-            'procedure' => $request->procedure,
-            'output' => $request->output,
-            'grade' => $request->grade,
-            'price' => $request->price,
-            'image' => $request->photo,
-            'store_id' => (int) $profile_id
-        ]);
+        $checkRow = DB::table('products')
+                        ->where('store_id', $profile_id)
+                        ->pluck('type')
+                        ->first();
 
-        $product->save();
+        if(is_null($checkRow)){
+            Product::where('store_id', $profile_id)
+                    ->update(['type' => $request->type,
+                              'procedure' => $request->procedure,
+                              'output' => $request->output,
+                              'grade' => $request->grade,
+                              'price' => $request->price,
+                              'image' => $request->photo]);
+        } else {
+            $product = new Product([
+                    'type' => $request->type,
+                    'procedure' => $request->procedure,
+                    'output' => $request->output,
+                    'grade' => $request->grade,
+                    'price' => $request->price,
+                    'image' => $request->photo,
+                    'store_id' => (int) $profile_id
+            ]);
+        
+            $product->save();
+        }
+
+        $products = DB::table('products')
+                        ->join('stores', 'products.store_id', '=', 'stores.id')
+                        ->select('products.*')
+                        ->where('stores.id', $profile_id)
+                        ->get();
 
         return response()->json([
             'message' => 'add product success',
-            'data' => $profile_id
+            'products' => $products
         ]);
     }
 
@@ -50,11 +71,11 @@ class ProductController extends Controller
                         ->join('stores', 'products.store_id', '=', 'stores.id')
                         ->select('products.*')
                         ->where('stores.id', $profile_id)
-                        ->paginate(1);
+                        ->get();
 
         return response()->json([
             'message' => 'success',
             'products' => $products
-        ], 201);
+        ]);
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\User;
 use App\Models\Store;
+use App\Models\Product;
 // use Twilio;
 
 class AuthController extends Controller
@@ -48,8 +49,16 @@ class AuthController extends Controller
 
         $store->save();
 
+        // $store_id = Store::find($store->id);
+        $product = new Product([
+            'store_id' => $store->id
+        ]);
+
+        $product->save();
+
         return response()->json([
             'message' => 'Register Success',
+            'data' => $product
         ], 201);
     }
 
@@ -119,12 +128,14 @@ class AuthController extends Controller
             $sid = DB::table('stores')->where('user_id', $user->id)->pluck('id');
             $new_sid = $sid['0'];
             $store = Store::find($new_sid);
+            $products = Product::where('store_id', $store->id)->get(); 
             
             return response()->json([
                 'token' => $tokenResult->accessToken,
                 'token_type' => 'Bearer',
                 'user' => $user,
                 'store' => $store,
+                'products' => $products, 
                 'message' => 'Login Success',
                 'phone_otp' => $user->phone_otp,
             ]);
