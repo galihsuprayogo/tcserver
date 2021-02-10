@@ -34,13 +34,13 @@ class ProductController extends Controller
                               'image' => $request->photo]);
         } else {
             $product = new Product([
+                    'store_id' => (int) $profile_id,
                     'type' => $request->type,
                     'procedure' => $request->procedure,
                     'output' => $request->output,
                     'grade' => $request->grade,
                     'price' => $request->price,
                     'image' => $request->photo,
-                    'store_id' => (int) $profile_id
             ]);
         
             $product->save();

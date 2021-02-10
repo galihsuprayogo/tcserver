@@ -9,7 +9,16 @@ class Product extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $table = 'products';
+    protected $fillable = [
+        'store_id',
+        'type',
+        'procedure',
+        'output',
+        'grade',
+        'price',
+        'image'
+    ];
 
     public function store()
     {
