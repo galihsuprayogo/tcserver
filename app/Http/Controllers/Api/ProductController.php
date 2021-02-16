@@ -54,28 +54,48 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'add product success',
-            'products' => $products
+            'products' => $products,
+            // 'user' => $user
         ]);
     }
 
-    public function show(Request $req)
+    public function destroy(Request $request)
     {
-        $user = $req->user();
+        $id = $request->id;
+        $user = $request->user();
         $profile = DB::table('users')
                         ->join('stores', 'users.id', '=', 'stores.user_id')
                         ->where('users.id', $user->id)
                         ->pluck('stores.id');
         $profile_id = $profile[0];
 
-        $products = DB::table('products')
-                        ->join('stores', 'products.store_id', '=', 'stores.id')
-                        ->select('products.*')
-                        ->where('stores.id', $profile_id)
+        $is_row = DB::table('products')
+                        ->select(DB::raw('count(*) as product_count, store_id'))
+                        ->where('store_id', $profile_id)
+                        ->groupBy('store_id')
                         ->get();
 
+        if($is_row[0]->product_count === 1) {
+            Product::where('id', $id)
+                    ->update(['type' => null,
+                              'procedure' => null,
+                              'output' => null,
+                              'grade' => null,
+                              'price' => null,
+                              'image' => null]);
+        } else {
+            Product::find($id)->delete();
+        }
+        
+        $products = DB::table('products')
+                            ->join('stores', 'products.store_id', '=', 'stores.id')
+                            ->select('products.*')
+                            ->where('stores.id', $profile_id)
+                            ->get();
+
         return response()->json([
-            'message' => 'success',
-            'products' => $products
+            'message' => 'delete product success',
+            'products' => $products,
         ]);
     }
 }

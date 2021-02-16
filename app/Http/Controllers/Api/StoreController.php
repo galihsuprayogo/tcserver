@@ -38,44 +38,4 @@ class StoreController extends Controller
         ]);
 
     }
-
-    public function image(Request $request)
-    {
-        $user = $request->user();
-        $path = DB::table('stores')->where('user_id', $user->id)->pluck('image');
-        $newPath = $path['0'];
-      
-        return response()->json([
-            'message' => 'success',
-            'encode' => $newPath
-        ]);
-
-    }
-    
-    public function show(Request $req)
-    {
-        $user = $req->user();
-        $profile = DB::table('users')
-                        ->join('stores', 'users.id', '=', 'stores.user_id')
-                        ->select('stores.*')
-                        ->where('users.id', $user->id)
-                        ->get();
-
-        return response()->json([
-            'data' => $profile,
-        ]);   
-    }
-
-    
-
-    public function backupDecode()
-    {
-        // $image_decode = base64_decode($image);
-        // $type = Str::substr($extend, 6);
-        // $image_name = 'profile_store_'.$user->id.'.'.$type;
-        // $newPath = public_path() . '/profile_store/';
-        // File::makeDirectory($newPath, $mode = 0777, true, true);
-        // $thumbPath = $newPath . $image_name;
-        // image::make($image_decode)->save($thumbPath)->resize(100,100);
-    }
 }
