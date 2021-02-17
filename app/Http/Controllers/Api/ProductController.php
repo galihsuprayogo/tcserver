@@ -98,4 +98,36 @@ class ProductController extends Controller
             'products' => $products,
         ]);
     }
+    
+    public function modify(Request $request)
+    {
+        $id = $request->id;
+        Product::where('id', $id)
+                    ->update([
+                        'type' => $request->type,
+                        'procedure' => $request->procedure,
+                        'output' => $request->output,
+                        'grade' => $request->grade,
+                        'price' => $request->price,
+                        'image' => $request->photo
+                    ]);
+
+        $user = $request->user();
+        $profile = DB::table('users')
+                            ->join('stores', 'users.id', '=', 'stores.user_id')
+                            ->where('users.id', $user->id)
+                            ->pluck('stores.id');
+        $profile_id = $profile[0];
+
+        $products = DB::table('products')
+                            ->join('stores', 'products.store_id', '=', 'stores.id')
+                            ->select('products.*')
+                            ->where('stores.id', $profile_id)
+                            ->get();
+
+        return response()->json([
+            'message' => 'update product success',
+            'products' => $products,
+        ]);
+    }
 }

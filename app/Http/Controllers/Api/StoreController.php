@@ -21,12 +21,16 @@ class StoreController extends Controller
         $user = $request->user();
         $name = $request->name;
         $image = $request->photo;
-        $address = $request->address;      
+        $address = $request->address;
+        $latitude = $request->latitude;
+        $longitude = $request->longitude;      
 
         Store::where('user_id', $user->id)
                     ->update(['name' => $name,
                               'image' => $image,
-                              'address' => $address]);
+                              'address' => $address,
+                              'latitude' => $latitude,
+                              'longitude' => $longitude]);
         $sid = DB::table('stores')->where('user_id', $user->id)->pluck('id');
         $new_sid = $sid['0'];
         $store = Store::find($new_sid);

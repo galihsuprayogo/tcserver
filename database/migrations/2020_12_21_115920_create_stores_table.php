@@ -19,8 +19,8 @@ class CreateStoresTable extends Migration
             $table->string('name')->nullable();
             $table->binary('image')->nullable();
             $table->string('address')->nullable();
-            $table->decimal('latitude', 15, 13)->nullable();
-            $table->decimal('longitude', 15, 12)->nullable();
+            $table->string('latitude')->nullable();
+            $table->string('longitude')->nullable();
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

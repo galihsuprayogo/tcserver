@@ -28,6 +28,7 @@ Route::group(['prefix' => 'auth'], function () {
         Route::post('store', 'StoreController@store');
         Route::post('createProduct', 'ProductController@store');
         Route::post('deleteProduct', 'ProductController@destroy');
+        Route::post('updateProduct', 'ProductController@modify');
         Route::get('logout', 'AuthController@logout');
     });
 });
