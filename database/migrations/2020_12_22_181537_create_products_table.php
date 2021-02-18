@@ -20,7 +20,7 @@ class CreateProductsTable extends Migration
             $table->string('procedure')->nullable();
             $table->string('output')->nullable();
             $table->string('grade')->nullable();
-            $table->string('price')->nullable();
+            $table->bigInteger('price')->nullable();
             $table->binary('image')->nullable();
             $table->timestamps();
 

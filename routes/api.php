@@ -23,6 +23,7 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('signup', 'AuthController@signup');
     Route::post('verify', 'AuthController@verify');
     Route::post('session', 'AuthController@session');
+    Route::get('minMax', 'DecisionSupportSystemController@minMax');
     
     Route::group(['middleware' => 'auth:api'], function () {
         Route::post('store', 'StoreController@store');
