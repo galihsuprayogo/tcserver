@@ -30,6 +30,7 @@ Route::group(['prefix' => 'auth'], function () {
         Route::post('createProduct', 'ProductController@store');
         Route::post('deleteProduct', 'ProductController@destroy');
         Route::post('updateProduct', 'ProductController@modify');
+        Route::post('existProduct', 'ProductController@isExist');
         Route::get('logout', 'AuthController@logout');
     });
 });
