@@ -13,6 +13,12 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
+        $type = $request->type;
+        $procedure = $request->procedure;
+        $output = $request->output;
+        $grade = $request->grade;
+        $price = $request->price;
+        $photo = $request->photo;
 
         $profile_address = DB::table('users')
                         ->join('stores', 'users.id', '=', 'stores.user_id')
@@ -28,72 +34,65 @@ class ProductController extends Controller
 
         $profile_id = $profile[0];
 
-        $isExistProduct = Product::where('type', '=', $request->type)
-                            ->where('procedure', '=', $request->procedure)
-                            ->where('output', '=', $request->output)
-                            ->where('grade', '=', $request->grade)
+        $isExistProduct = Product::where('type', '=', $type)
+                            ->where('procedure', '=', $procedure)
+                            ->where('output', '=', $output)
+                            ->where('grade', '=', $grade)
                             ->where('store_id', $profile_id)
                             ->exists();
 
-        if(is_null($profile_address_new))
-        {
+        if(is_null($profile_address_new)){
             return response()->json([
                 'address' => $profile_address_new,
             ]);
         } 
-        else 
-        {
-            if($isExistProduct)
-            {
-                return response()->json([
-                    'isExist' => $isExistProduct,
-                    'address' => $profile_address_new
-                ]);
-            }
-            else 
-            {
-                $checkRow = DB::table('products')
-                            ->where('store_id', $profile_id)
-                            ->pluck('type')
-                            ->first();
-
-                if(is_null($checkRow)){
-                    Product::where('store_id', $profile_id)
-                            ->update(['type' => $request->type,
-                                    'procedure' => $request->procedure,
-                                    'output' => $request->output,
-                                    'grade' => $request->grade,
-                                    'price' => $request->price,
-                                    'image' => $request->photo]);
-                } else {
-                    $product = new Product([
-                            'store_id' => (int) $profile_id,
-                            'type' => $request->type,
-                            'procedure' => $request->procedure,
-                            'output' => $request->output,
-                            'grade' => $request->grade,
-                            'price' => $request->price,
-                            'image' => $request->photo,
-                    ]);
-                
-                    $product->save();
-                }
-
-                $products = DB::table('products')
-                                ->join('stores', 'products.store_id', '=', 'stores.id')
-                                ->select('products.*')
-                                ->where('stores.id', $profile_id)
-                                ->get();
-
-                return response()->json([
-                    'message' => 'add product success',
-                    'products' => $products,
-                    'isExist' => $isExistProduct,
-                    'address' => $profile_address_new
-                ]);
-            }
+        elseif($isExistProduct){
+            return response()->json([
+                'address' => $profile_address_new,
+                'isExist' => $isExistProduct,
+            ]);
         }
-    
+        else{
+            $checkRow = DB::table('products')
+            ->where('store_id', $profile_id)
+            ->pluck('type')
+            ->first();
+
+            if(is_null($checkRow)){
+                Product::where('store_id', $profile_id)
+                        ->update(['type' => $type,
+                                'procedure' => $procedure,
+                                'output' => $output,
+                                'grade' => $grade,
+                                'price' => $price,
+                                'image' => $photo]);
+            } else {
+                $product = new Product([
+                        'store_id' => (int) $profile_id,
+                        'type' => $type,
+                        'procedure' => $procedure,
+                        'output' => $output,
+                        'grade' => $grade,
+                        'price' => $price,
+                        'image' => $photo,
+                ]);
+
+                $product->save();
+            }
+
+            $products = DB::table('products')
+                            ->join('stores', 'products.store_id', '=', 'stores.id')
+                            ->select('products.*')
+                            ->where('stores.id', $profile_id)
+                            ->get();
+
+            return response()->json([
+                'address' => $profile_address_new,
+                'isExist' => $isExistProduct,
+                'message' => 'add product success',
+                'products' => $products,
+            ]);
+        }
     }
 
     public function destroy(Request $request)
