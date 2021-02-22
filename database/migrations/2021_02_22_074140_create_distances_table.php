@@ -14,7 +14,8 @@ class CreateDistancesTable extends Migration
     public function up()
     {
         Schema::create('distances', function (Blueprint $table) {
-            $table->unsignedBigInteger('store_id')->default(0);
+            $table->id();
+            $table->unsignedBigInteger('consumer_id')->default(0);
             $table->double('latitude')->default(0);
             $table->double('longitude')->default(0);
             $table->double('distance')->default(0);

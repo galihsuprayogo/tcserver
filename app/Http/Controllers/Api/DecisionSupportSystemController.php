@@ -24,6 +24,7 @@ class DecisionSupportSystemController extends Controller
 
     public function distance(Request $request)
     {
+        $consumer_id = $request->consumerId;
         $type = $request->type;
         $procedure = $request->procedure;
         $output = $request->output;
@@ -35,7 +36,7 @@ class DecisionSupportSystemController extends Controller
 
         $collects = DB::table('products')
                                 ->join('stores', 'products.store_id', '=', 'stores.id')
-                                ->select('products.store_id', 'stores.latitude', 'stores.longitude')
+                                ->select('stores.latitude', 'stores.longitude')
                                 ->where([
                                     ['products.type', $type],
                                     ['products.procedure', $procedure],
@@ -47,7 +48,7 @@ class DecisionSupportSystemController extends Controller
                                 ->get();
         foreach ($collects as $collect) {
             Distance::insert([
-                'store_id' => $collect->store_id,
+                'consumer_id' => $consumer_id,
                 'latitude' => floatval($collect->latitude),
                 'longitude'=> floatval($collect->longitude),
                 'distance' => 0
@@ -66,7 +67,10 @@ class DecisionSupportSystemController extends Controller
             $kilometers = round(($miles * 1.609344),1);
             $meters = $kilometers * 1000;
 
-            DB::table('distances')->where('store_id', $destination->store_id)->update([
+            DB::table('distances')->where([
+                ['id', $destination->id],
+                ['consumer_id', $consumer_id],
+            ])->update([
                 'distance' => $kilometers
             ]);
         }
@@ -79,7 +83,8 @@ class DecisionSupportSystemController extends Controller
 
     public function clearDistance(Request $request)
     {
-        DB::table('distances')->delete();
+        $consumer_id = $request->consumerId;
+        Distance::where('consumer_id', $consumer_id)->delete();
         return response()->json([
             'message' => 'clear success'
         ]);

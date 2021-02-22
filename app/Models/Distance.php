@@ -11,7 +11,7 @@ class Distance extends Model
 
     protected $table = 'distances';
     protected $fillable = [
-        'store_id',
+        'consumer_id',
         'latitude',
         'longitude',
         'distance'
