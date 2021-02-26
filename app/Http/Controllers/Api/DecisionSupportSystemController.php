@@ -177,10 +177,12 @@ class DecisionSupportSystemController extends Controller
 
         $leavingFlows = $this->leavingFlow($tableMultiCriteria, sizeof($data), $totalAlternative, $data);  
         $enteringFlows = $this->enteringFlow($tableMultiCriteria, sizeof($data), $totalAlternative, $data);
+        $netFlows = collect([$this->netFlow($leavingFlows, $enteringFlows, sizeof($data), $data)]);
 
         return response()->json([
             'leavingFlow' => $leavingFlows,
-            'enteringFlow' => $enteringFlows
+            'enteringFlow' => $enteringFlows,
+            'netFlow' => $netFlows->sortDesc()
         ]);
     }
 
@@ -222,6 +224,14 @@ class DecisionSupportSystemController extends Controller
             $enteringFlowBackFlip[$data[$i-1]->store_id] = array_sum($entering[$i])/$totalAlternative;
         }
         return $enteringFlowBackFlip;
+    }
+
+    public function netFlow($leaving, $entering, $size, $data)
+    {
+        for ($i=1; $i <= $size; $i++) { 
+            $net[$data[$i-1]->store_id] = $leaving[$i] - $entering[$i];
+        }
+        return $net;
     }
 
     public function clearDistance(Request $request)
