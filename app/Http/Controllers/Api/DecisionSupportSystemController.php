@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\Distance;
@@ -123,6 +125,63 @@ class DecisionSupportSystemController extends Controller
         return response()->json([
             'distances' => $distances,
         ]);
+    }
+
+    public function indexPreferencesMultiCriteria(Request $request)
+    {
+        $consumer_id = $request->consumerId;
+        $data = DB::table('promethees')
+                    ->join('distances', 'promethees.distance_id', '=', 'distances.id')
+                    ->select('promethees.store_id', 'promethees.type', 'promethees.procedure', 'promethees.output', 
+                    'promethees.grade', 'promethees.price', 'distances.distance')
+                    ->where('distances.consumer_id', $consumer_id)
+                    ->get();
+        $collections = [];
+        for ($i=0; $i < sizeof($data); $i++) {
+                for ($j=0; $j < sizeof($data); $j++) { 
+                    if($i!==$j){
+                        $types[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->type, $data[$j]->type, ($data[$i]->type-$data[$j]->type)]);
+                        $procedures[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->procedure, $data[$j]->procedure, ($data[$i]->procedure-$data[$j]->procedure)]);
+                        $outputs[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->output, $data[$j]->output, ($data[$i]->output-$data[$j]->output)]);
+                        $grades[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->grade, $data[$j]->grade, ($data[$i]->grade-$data[$j]->grade)]);
+                        $prices[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->price, $data[$j]->price, ($data[$i]->price-$data[$j]->price)]);
+                        $distances[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->distance, $data[$j]->distance, ($data[$i]->distance-$data[$j]->distance)]);
+                        $types[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($types[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
+                        $procedures[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($procedures[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
+                        $outputs[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($outputs[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
+                        $grades[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($grades[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
+                        $prices[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($prices[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
+                        $distances[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($distances[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
+                    }
+                }
+        }
+
+        return response()->json([
+            'types' => $types,
+            'procedures' => $procedures,
+            'outputs' => $outputs,
+            'grades' => $grades,
+            'distances' => $distances,
+            'prices' => $prices,
+        ]);
+    }
+
+    public function calculatingAlternativeValue($params)
+    {
+        switch ($params) {
+            case $params === 0:
+                return 0;
+                break;
+            case $params < 0:
+                return 0;
+                break;
+            case $params > 0:
+                return 1;
+                break;
+            default:
+                return 0;
+                break;
+        }
     }
 
     public function clearDistance(Request $request)
