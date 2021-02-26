@@ -130,13 +130,15 @@ class DecisionSupportSystemController extends Controller
     public function indexPreferencesMultiCriteria(Request $request)
     {
         $consumer_id = $request->consumerId;
+        $totalCriteria = 6;
         $data = DB::table('promethees')
                     ->join('distances', 'promethees.distance_id', '=', 'distances.id')
                     ->select('promethees.store_id', 'promethees.type', 'promethees.procedure', 'promethees.output', 
                     'promethees.grade', 'promethees.price', 'distances.distance')
                     ->where('distances.consumer_id', $consumer_id)
                     ->get();
-        $collections = [];
+
+        $totalAlternative = sizeof($data) - 1;
         for ($i=0; $i < sizeof($data); $i++) {
                 for ($j=0; $j < sizeof($data); $j++) { 
                     if($i!==$j){
@@ -151,18 +153,34 @@ class DecisionSupportSystemController extends Controller
                         $outputs[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($outputs[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
                         $grades[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($grades[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
                         $prices[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($prices[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
-                        $distances[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($distances[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
+                        $distances[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($distances[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));          
                     }
                 }
         }
 
+        for ($i=0; $i < sizeof($data) ; $i++) { 
+            for ($j=0; $j < sizeof($data); $j++) { 
+                if($i!==$j){
+                    $tableMultiCriteria[$data[$i]->store_id][$data[$j]->store_id] = 
+                    ($types[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)] + 
+                        $procedures[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)] +
+                        $outputs[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)] +
+                        $grades[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)] +
+                        $prices[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)] +
+                        $distances[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)])/$totalCriteria;
+                }
+                if($i==$j){
+                    $tableMultiCriteria[$data[$i]->store_id][$data[$j]->store_id] = 0;
+                } 
+            }
+        }
+
+        $leavingFlows = $this->leavingFlow($tableMultiCriteria, sizeof($data), $totalAlternative, $data);  
+        $enteringFlows = $this->enteringFlow($tableMultiCriteria, sizeof($data), $totalAlternative, $data);
+
         return response()->json([
-            'types' => $types,
-            'procedures' => $procedures,
-            'outputs' => $outputs,
-            'grades' => $grades,
-            'distances' => $distances,
-            'prices' => $prices,
+            'leavingFlow' => $leavingFlows,
+            'enteringFlow' => $enteringFlows
         ]);
     }
 
@@ -182,6 +200,28 @@ class DecisionSupportSystemController extends Controller
                 return 0;
                 break;
         }
+    }
+
+    public function leavingFlow($tableMultiCriteria, $size, $totalAlternative, $data)
+    {
+        for ($i=1; $i <= $size; $i++) { 
+            $leaving[$data[$i-1]->store_id] = array_sum($tableMultiCriteria[$i])/$totalAlternative;
+        }
+       return $leaving;
+    }
+
+    public function enteringFlow($tableMultiCriteria, $size, $totalAlternative, $data)
+    {
+        for ($i=1; $i <= $size ; $i++) { 
+            for ($j=1; $j <= $size; $j++) { 
+                $entering[$data[$j-1]->store_id][$data[$i-1]->store_id]= $tableMultiCriteria[$i][$j];
+            }
+        }
+
+        for ($i=1; $i <= $size; $i++) { 
+            $enteringFlowBackFlip[$data[$i-1]->store_id] = array_sum($entering[$i])/$totalAlternative;
+        }
+        return $enteringFlowBackFlip;
     }
 
     public function clearDistance(Request $request)
