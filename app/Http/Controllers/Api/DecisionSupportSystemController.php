@@ -120,15 +120,11 @@ class DecisionSupportSystemController extends Controller
                 'distance' => $kilometers
             ]);
         }
-
-        $distances = Distance::select('distance')->get();
-        return response()->json([
-            'distances' => $distances,
-        ]);
     }
 
     public function indexPreferencesMultiCriteria(Request $request)
     {
+        // $this->distance($request);
         $consumer_id = $request->consumerId;
         $totalCriteria = 6;
         $data = DB::table('promethees')
@@ -148,12 +144,12 @@ class DecisionSupportSystemController extends Controller
                         $grades[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->grade, $data[$j]->grade, ($data[$i]->grade-$data[$j]->grade)]);
                         $prices[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->price, $data[$j]->price, ($data[$i]->price-$data[$j]->price)]);
                         $distances[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->distance, $data[$j]->distance, ($data[$i]->distance-$data[$j]->distance)]);
-                        $types[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($types[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
-                        $procedures[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($procedures[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
-                        $outputs[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($outputs[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
-                        $grades[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($grades[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
-                        $prices[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($prices[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));
-                        $distances[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($distances[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)-1]));          
+                        $types[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($types[$data[$i]->store_id][$data[$j]->store_id][2]));
+                        $procedures[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($procedures[$data[$i]->store_id][$data[$j]->store_id][2]));
+                        $outputs[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($outputs[$data[$i]->store_id][$data[$j]->store_id][2]));
+                        $grades[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($grades[$data[$i]->store_id][$data[$j]->store_id][2]));
+                        $prices[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($prices[$data[$i]->store_id][$data[$j]->store_id][2]));
+                        $distances[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($distances[$data[$i]->store_id][$data[$j]->store_id][2]));          
                     }
                 }
         }
@@ -162,12 +158,12 @@ class DecisionSupportSystemController extends Controller
             for ($j=0; $j < sizeof($data); $j++) { 
                 if($i!==$j){
                     $tableMultiCriteria[$data[$i]->store_id][$data[$j]->store_id] = 
-                    ($types[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)] + 
-                        $procedures[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)] +
-                        $outputs[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)] +
-                        $grades[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)] +
-                        $prices[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)] +
-                        $distances[$data[$i]->store_id][$data[$j]->store_id][sizeof($data)])/$totalCriteria;
+                    ($types[$data[$i]->store_id][$data[$j]->store_id][3] + 
+                        $procedures[$data[$i]->store_id][$data[$j]->store_id][3] +
+                        $outputs[$data[$i]->store_id][$data[$j]->store_id][3] +
+                        $grades[$data[$i]->store_id][$data[$j]->store_id][3] +
+                        $prices[$data[$i]->store_id][$data[$j]->store_id][3] +
+                        $distances[$data[$i]->store_id][$data[$j]->store_id][3])/$totalCriteria;
                 }
                 if($i==$j){
                     $tableMultiCriteria[$data[$i]->store_id][$data[$j]->store_id] = 0;
@@ -175,14 +171,15 @@ class DecisionSupportSystemController extends Controller
             }
         }
 
-        $leavingFlows = $this->leavingFlow($tableMultiCriteria, sizeof($data), $totalAlternative, $data);  
-        $enteringFlows = $this->enteringFlow($tableMultiCriteria, sizeof($data), $totalAlternative, $data);
-        $netFlows = collect([$this->netFlow($leavingFlows, $enteringFlows, sizeof($data), $data)]);
+        $leavingFlows = $this->leavingFlow($tableMultiCriteria, $totalAlternative, $data);  
+        $enteringFlows = $this->enteringFlow($tableMultiCriteria, $totalAlternative, $data);
+        $netFlows = $this->netFlow($leavingFlows, $enteringFlows, $tableMultiCriteria, $data);
 
         return response()->json([
             'leavingFlow' => $leavingFlows,
             'enteringFlow' => $enteringFlows,
-            'netFlow' => $netFlows->sortDesc()
+            'netFlow' => $netFlows,
+            'Distance' => $distances
         ]);
     }
 
@@ -204,32 +201,35 @@ class DecisionSupportSystemController extends Controller
         }
     }
 
-    public function leavingFlow($tableMultiCriteria, $size, $totalAlternative, $data)
+    public function leavingFlow($tableMultiCriteria, $totalAlternative, $data)
     {
-        for ($i=1; $i <= $size; $i++) { 
-            $leaving[$data[$i-1]->store_id] = array_sum($tableMultiCriteria[$i])/$totalAlternative;
+        $bantu = array_keys($tableMultiCriteria);
+        for ($i=0; $i < sizeof($tableMultiCriteria); $i++) { 
+            $leaving[$data[$i]->store_id] = array_sum($tableMultiCriteria[$bantu[$i]])/$totalAlternative;
         }
-       return $leaving;
+        return $leaving;
     }
 
-    public function enteringFlow($tableMultiCriteria, $size, $totalAlternative, $data)
+    public function enteringFlow($tableMultiCriteria, $totalAlternative, $data)
     {
-        for ($i=1; $i <= $size ; $i++) { 
-            for ($j=1; $j <= $size; $j++) { 
-                $entering[$data[$j-1]->store_id][$data[$i-1]->store_id]= $tableMultiCriteria[$i][$j];
+        $bantu = array_keys($tableMultiCriteria);
+        for ($i=0; $i < sizeof($tableMultiCriteria) ; $i++) { 
+            for ($j=0; $j < sizeof($tableMultiCriteria); $j++) { 
+                $entering[$data[$j]->store_id][$data[$i]->store_id]= $tableMultiCriteria[$bantu[$i]][$bantu[$j]];
             }
         }
 
-        for ($i=1; $i <= $size; $i++) { 
-            $enteringFlowBackFlip[$data[$i-1]->store_id] = array_sum($entering[$i])/$totalAlternative;
+        for ($i=0; $i < sizeof($tableMultiCriteria); $i++) { 
+            $enteringFlowBackFlip[$data[$i]->store_id] = array_sum($entering[$bantu[$i]])/$totalAlternative;
         }
         return $enteringFlowBackFlip;
     }
 
-    public function netFlow($leaving, $entering, $size, $data)
+    public function netFlow($leaving, $entering, $tableMultiCriteria, $data)
     {
-        for ($i=1; $i <= $size; $i++) { 
-            $net[$data[$i-1]->store_id] = $leaving[$i] - $entering[$i];
+        $bantu = array_keys($tableMultiCriteria);
+        for ($i=0; $i < sizeof($tableMultiCriteria); $i++) { 
+            $net[$data[$i]->store_id] = $leaving[$bantu[$i]] - $entering[$bantu[$i]];
         }
         return $net;
     }
