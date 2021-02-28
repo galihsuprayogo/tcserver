@@ -25,34 +25,19 @@ class DecisionSupportSystemController extends Controller
         ]);
     }
 
-    public function distance(Request $request)
+    public function distance($request)
     {
         $consumer_id = $request->consumerId;
         $type = $request->type;
         $procedure = $request->procedure;
         $output = $request->output;
         $grade = $request->grade;
-        $minimum = floatval($request->minimum);
-        $maximum = floatval($request->maximum);
+        $minimum = $request->minimum;
+        $maximum = $request->maximum;
         $latitude_position = floatval($request->latitude);
         $longitude_position = floatval($request->longitude);
 
-        if($grade === 'Default'){
-            $collects = DB::table('products')
-                                ->join('stores', 'products.store_id', '=', 'stores.id')
-                                ->select('products.type', 'products.procedure', 'products.output', 
-                                'products.grade', 'products.price', 
-                                'stores.id', 'stores.latitude', 'stores.longitude')
-                                ->where([
-                                    ['products.type', $type],
-                                    ['products.procedure', $procedure],
-                                    ['products.output', $output],
-                                    ['products.price', '>=', $minimum],
-                                    ['products.price', '<=', $maximum]
-                                ])
-                                ->get();
-        } else {
-            $collects = DB::table('products')
+        $collects = DB::table('products')
                                 ->join('stores', 'products.store_id', '=', 'stores.id')
                                 ->select('products.type', 'products.procedure', 'products.output', 
                                 'products.grade', 'products.price', 
@@ -64,9 +49,8 @@ class DecisionSupportSystemController extends Controller
                                     ['products.grade', $grade],
                                     ['products.price', '>=', $minimum],
                                     ['products.price', '<=', $maximum]
-                                ])
-                                ->get();
-        }
+                                ])->get();
+        
         
         foreach ($collects as $collect) {
             Distance::insert([
@@ -124,7 +108,7 @@ class DecisionSupportSystemController extends Controller
 
     public function indexPreferencesMultiCriteria(Request $request)
     {
-        // $this->distance($request);
+        $this->distance($request);
         $consumer_id = $request->consumerId;
         $totalCriteria = 6;
         $data = DB::table('promethees')
@@ -174,13 +158,13 @@ class DecisionSupportSystemController extends Controller
         $leavingFlows = $this->leavingFlow($tableMultiCriteria, $totalAlternative, $data);  
         $enteringFlows = $this->enteringFlow($tableMultiCriteria, $totalAlternative, $data);
         $netFlows = $this->netFlow($leavingFlows, $enteringFlows, $tableMultiCriteria, $data);
+        $ranking = $this->ranking($consumer_id);
 
         return response()->json([
-            'leavingFlow' => $leavingFlows,
-            'enteringFlow' => $enteringFlows,
-            'netFlow' => $netFlows,
-            'Distance' => $distances
+            'stores' => $ranking
         ]);
+
+        $this->clear($consumer_id);
     }
 
     public function calculatingAlternativeValue($params)
@@ -230,11 +214,28 @@ class DecisionSupportSystemController extends Controller
         $bantu = array_keys($tableMultiCriteria);
         for ($i=0; $i < sizeof($tableMultiCriteria); $i++) { 
             $net[$data[$i]->store_id] = $leaving[$bantu[$i]] - $entering[$bantu[$i]];
+            DB::table('promethees')->where('store_id', $data[$i]->store_id)->update([
+                'score' => $leaving[$bantu[$i]] - $entering[$bantu[$i]]
+            ]);
         }
         return $net;
     }
 
-    public function clearDistance(Request $request)
+    public function ranking($consumer_id)
+    {
+        $ranking = DB::table('distances')
+                        ->join('promethees', 'distances.id', '=', 'promethees.distance_id')
+                        ->join('stores', 'promethees.store_id', '=', 'stores.id')
+                        ->select('stores.id', 'stores.name', 'stores.image', 'distances.latitude', 
+                          'distances.longitude', 'stores.address', 'promethees.score')
+                        ->where('distances.consumer_id', $consumer_id)
+                        ->orderBy('promethees.score', 'desc')
+                        ->get();
+
+        return $ranking;
+    }
+
+    public function clear($consumer_id)
     {
         $consumer_id = $request->consumerId;
         Distance::where('consumer_id', $consumer_id)->delete();

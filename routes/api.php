@@ -25,8 +25,7 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('session', 'AuthController@session');
     Route::get('minMax', 'DecisionSupportSystemController@minMax');
     Route::post('index', 'DecisionSupportSystemController@indexPreferencesMultiCriteria');
-    Route::post('distance', 'DecisionSupportSystemController@distance');
-    Route::post('clear', 'DecisionSupportSystemController@clearDistance');
+    Route::post('clear', 'DecisionSupportSystemController@clear');
     
     Route::group(['middleware' => 'auth:api'], function () {
         Route::post('store', 'StoreController@store');
