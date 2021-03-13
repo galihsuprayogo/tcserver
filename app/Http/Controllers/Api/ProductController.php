@@ -142,7 +142,8 @@ class ProductController extends Controller
                             ->where('procedure', '=', $request->procedure)
                             ->where('output', '=', $request->output)
                             ->where('grade', '=', $request->grade)
-                            ->where('store_id', $id)
+                            ->Where('price', '=', $request->price)
+                            ->where('store_id', $request->store_id)
                             ->exists();
 
         if($isExistProduct)

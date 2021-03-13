@@ -161,10 +161,10 @@ class DecisionSupportSystemController extends Controller
         $ranking = $this->ranking($consumer_id);
 
         return response()->json([
-            'stores' => $ranking
+            'stores' => $ranking,
+            $this->clear($consumer_id)
         ]);
 
-        $this->clear($consumer_id);
     }
 
     public function calculatingAlternativeValue($params)
@@ -230,12 +230,21 @@ class DecisionSupportSystemController extends Controller
                           'distances.longitude', 'stores.address', 'promethees.score')
                         ->where('distances.consumer_id', $consumer_id)
                         ->orderBy('promethees.score', 'desc')
+                        ->limit(5)
                         ->get();
 
         return $ranking;
     }
 
     public function clear($consumer_id)
+    {
+        Distance::where('consumer_id', $consumer_id)->delete();
+        return response()->json([
+            'message' => 'clear success'
+        ]);
+    }
+
+    public function clearHelper(Request $request)
     {
         $consumer_id = $request->consumerId;
         Distance::where('consumer_id', $consumer_id)->delete();
