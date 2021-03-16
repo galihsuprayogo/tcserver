@@ -161,9 +161,9 @@ class DecisionSupportSystemController extends Controller
         $ranking = $this->ranking($consumer_id);
 
         return response()->json([
-            'stores' => $ranking,
-            $this->clear($consumer_id)
+            'stores' => $ranking
         ]);
+        $this->clear($consumer_id);
 
     }
 
