@@ -49,6 +49,14 @@ class StoreController extends Controller
             'user' => $user,
             'store' => $store
         ]);
+    }
 
+    public function decode(Request $request)
+    {
+        $photo = $request->file('photo');
+        $image_decode = base64_encode($photo);
+        return response()->json([
+            'decode' => $image_decode
+        ]);
     }
 }
