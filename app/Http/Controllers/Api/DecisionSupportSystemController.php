@@ -161,8 +161,7 @@ class DecisionSupportSystemController extends Controller
         $ranking = $this->ranking($consumer_id);
 
         return response()->json([
-            'stores' => $ranking,
-            $this->clear($consumer_id)
+            'stores' => $ranking
         ]);
 
     }
@@ -234,14 +233,6 @@ class DecisionSupportSystemController extends Controller
                         ->get();
 
         return $ranking;
-    }
-
-    public function clear($consumer_id)
-    {
-        Distance::where('consumer_id', $consumer_id)->delete();
-        return response()->json([
-            'message' => 'clear success'
-        ]);
     }
 
     public function clearHelper(Request $request)
