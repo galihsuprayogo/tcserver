@@ -25,6 +25,110 @@ class DecisionSupportSystemController extends Controller
         ]);
     }
 
+    public function isAvailableStore(Request $request)
+    {
+        $consumer_id = $request->consumerId;
+        $type = $request->type;
+        $procedure = $request->procedure;
+        $output = $request->output;
+        $grade = $request->grade;
+        $minimum = $request->minimum;
+        $maximum = $request->maximum;
+        $latitude_position = floatval($request->latitude);
+        $longitude_position = floatval($request->longitude);
+
+        $counts = DB::table('products')
+                                ->join('stores', 'products.store_id', '=', 'stores.id')
+                                ->select(DB::raw('count(*) as store_count, products.type'))
+                                ->where([
+                                    ['products.type', $type],
+                                    ['products.procedure', $procedure],
+                                    ['products.output', $output],
+                                    ['products.grade', $grade],
+                                    ['products.price', '>=', $minimum],
+                                    ['products.price', '<=', $maximum]
+                                ])
+                                ->groupBy('products.type')
+                                ->get();
+        if($counts->count() === 0){
+            return response()->json([
+                'counts' => $counts,
+                'message' => 'empty'
+            ]);
+        }else{
+            if($counts[0]->store_count < 3){
+                    return response()->json([
+                        'counts' => $counts[0]->store_count,
+                        'message' => 'unavailable'
+                    ]);
+                }else {
+                    return response()->json([
+                        'counts' => $counts[0]->store_count,
+                        'message' => 'available'
+                    ]);
+            }
+        }
+    }
+
+    public function indexPreferencesMultiCriteria(Request $request)
+    {
+        $this->distance($request);
+        $consumer_id = $request->consumerId;
+        $totalCriteria = 6;
+        $data = DB::table('promethees')
+                    ->join('distances', 'promethees.distance_id', '=', 'distances.id')
+                    ->select('promethees.store_id', 'promethees.type', 'promethees.procedure', 'promethees.output', 
+                    'promethees.grade', 'promethees.price', 'distances.distance')
+                    ->where('distances.consumer_id', $consumer_id)
+                    ->get();
+
+        $totalAlternative = sizeof($data) - 1;
+        for ($i=0; $i < sizeof($data); $i++) {
+                for ($j=0; $j < sizeof($data); $j++) { 
+                    if($i!==$j){
+                        $types[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->type, $data[$j]->type, ($data[$i]->type-$data[$j]->type)]);
+                        $procedures[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->procedure, $data[$j]->procedure, ($data[$i]->procedure-$data[$j]->procedure)]);
+                        $outputs[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->output, $data[$j]->output, ($data[$i]->output-$data[$j]->output)]);
+                        $grades[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->grade, $data[$j]->grade, ($data[$i]->grade-$data[$j]->grade)]);
+                        $prices[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->price, $data[$j]->price, ($data[$i]->price-$data[$j]->price)]);
+                        $distances[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->distance, $data[$j]->distance, ($data[$i]->distance-$data[$j]->distance)]);
+                        $types[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($types[$data[$i]->store_id][$data[$j]->store_id][2]));
+                        $procedures[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($procedures[$data[$i]->store_id][$data[$j]->store_id][2]));
+                        $outputs[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($outputs[$data[$i]->store_id][$data[$j]->store_id][2]));
+                        $grades[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($grades[$data[$i]->store_id][$data[$j]->store_id][2]));
+                        $prices[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($prices[$data[$i]->store_id][$data[$j]->store_id][2]));
+                        $distances[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($distances[$data[$i]->store_id][$data[$j]->store_id][2]));          
+                    }
+                }
+        }
+
+        for ($i=0; $i < sizeof($data) ; $i++) { 
+            for ($j=0; $j < sizeof($data); $j++) { 
+                if($i!==$j){
+                    $tableMultiCriteria[$data[$i]->store_id][$data[$j]->store_id] = 
+                    ($types[$data[$i]->store_id][$data[$j]->store_id][3] + 
+                        $procedures[$data[$i]->store_id][$data[$j]->store_id][3] +
+                        $outputs[$data[$i]->store_id][$data[$j]->store_id][3] +
+                        $grades[$data[$i]->store_id][$data[$j]->store_id][3] +
+                        $prices[$data[$i]->store_id][$data[$j]->store_id][3] +
+                        $distances[$data[$i]->store_id][$data[$j]->store_id][3])/$totalCriteria;
+                }
+                if($i==$j){
+                    $tableMultiCriteria[$data[$i]->store_id][$data[$j]->store_id] = 0;
+                } 
+            }
+        }
+
+        $leavingFlows = $this->leavingFlow($tableMultiCriteria, $totalAlternative, $data);  
+        $enteringFlows = $this->enteringFlow($tableMultiCriteria, $totalAlternative, $data);
+        $netFlows = $this->netFlow($leavingFlows, $enteringFlows, $tableMultiCriteria, $data);
+
+        return response()->json([
+            'message' => 'success'
+        ]);
+
+    }
+
     public function distance($request)
     {
         $consumer_id = $request->consumerId;
@@ -106,66 +210,6 @@ class DecisionSupportSystemController extends Controller
         }
     }
 
-    public function indexPreferencesMultiCriteria(Request $request)
-    {
-        $this->distance($request);
-        $consumer_id = $request->consumerId;
-        $totalCriteria = 6;
-        $data = DB::table('promethees')
-                    ->join('distances', 'promethees.distance_id', '=', 'distances.id')
-                    ->select('promethees.store_id', 'promethees.type', 'promethees.procedure', 'promethees.output', 
-                    'promethees.grade', 'promethees.price', 'distances.distance')
-                    ->where('distances.consumer_id', $consumer_id)
-                    ->get();
-
-        $totalAlternative = sizeof($data) - 1;
-        for ($i=0; $i < sizeof($data); $i++) {
-                for ($j=0; $j < sizeof($data); $j++) { 
-                    if($i!==$j){
-                        $types[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->type, $data[$j]->type, ($data[$i]->type-$data[$j]->type)]);
-                        $procedures[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->procedure, $data[$j]->procedure, ($data[$i]->procedure-$data[$j]->procedure)]);
-                        $outputs[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->output, $data[$j]->output, ($data[$i]->output-$data[$j]->output)]);
-                        $grades[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->grade, $data[$j]->grade, ($data[$i]->grade-$data[$j]->grade)]);
-                        $prices[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->price, $data[$j]->price, ($data[$i]->price-$data[$j]->price)]);
-                        $distances[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->distance, $data[$j]->distance, ($data[$i]->distance-$data[$j]->distance)]);
-                        $types[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($types[$data[$i]->store_id][$data[$j]->store_id][2]));
-                        $procedures[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($procedures[$data[$i]->store_id][$data[$j]->store_id][2]));
-                        $outputs[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($outputs[$data[$i]->store_id][$data[$j]->store_id][2]));
-                        $grades[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($grades[$data[$i]->store_id][$data[$j]->store_id][2]));
-                        $prices[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($prices[$data[$i]->store_id][$data[$j]->store_id][2]));
-                        $distances[$data[$i]->store_id][$data[$j]->store_id]->push($this->calculatingAlternativeValue($distances[$data[$i]->store_id][$data[$j]->store_id][2]));          
-                    }
-                }
-        }
-
-        for ($i=0; $i < sizeof($data) ; $i++) { 
-            for ($j=0; $j < sizeof($data); $j++) { 
-                if($i!==$j){
-                    $tableMultiCriteria[$data[$i]->store_id][$data[$j]->store_id] = 
-                    ($types[$data[$i]->store_id][$data[$j]->store_id][3] + 
-                        $procedures[$data[$i]->store_id][$data[$j]->store_id][3] +
-                        $outputs[$data[$i]->store_id][$data[$j]->store_id][3] +
-                        $grades[$data[$i]->store_id][$data[$j]->store_id][3] +
-                        $prices[$data[$i]->store_id][$data[$j]->store_id][3] +
-                        $distances[$data[$i]->store_id][$data[$j]->store_id][3])/$totalCriteria;
-                }
-                if($i==$j){
-                    $tableMultiCriteria[$data[$i]->store_id][$data[$j]->store_id] = 0;
-                } 
-            }
-        }
-
-        $leavingFlows = $this->leavingFlow($tableMultiCriteria, $totalAlternative, $data);  
-        $enteringFlows = $this->enteringFlow($tableMultiCriteria, $totalAlternative, $data);
-        $netFlows = $this->netFlow($leavingFlows, $enteringFlows, $tableMultiCriteria, $data);
-        $ranking = $this->ranking($consumer_id);
-
-        return response()->json([
-            'stores' => $ranking
-        ]);
-
-    }
-
     public function calculatingAlternativeValue($params)
     {
         switch ($params) {
@@ -220,8 +264,9 @@ class DecisionSupportSystemController extends Controller
         return $net;
     }
 
-    public function ranking($consumer_id)
+    public function ranking(Request $request)
     {
+        $consumer_id = $request->consumerId;
         $ranking = DB::table('distances')
                         ->join('promethees', 'distances.id', '=', 'promethees.distance_id')
                         ->join('stores', 'promethees.store_id', '=', 'stores.id')
@@ -232,7 +277,9 @@ class DecisionSupportSystemController extends Controller
                         ->limit(5)
                         ->get();
 
-        return $ranking;
+        return response()->json([
+            'ranking' => $ranking
+        ]);
     }
 
     public function clearHelper(Request $request)
