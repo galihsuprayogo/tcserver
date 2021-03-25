@@ -20,8 +20,8 @@ class DecisionSupportSystemController extends Controller
         $maximum = DB::table('products')->max('price');
 
         return response()->json([
-            'minimum' => $minimum,
-            'maximum' => $maximum
+            'minimum' => floatval($minimum),
+            'maximum' => floatval($maximum)
         ]);
     }
 
