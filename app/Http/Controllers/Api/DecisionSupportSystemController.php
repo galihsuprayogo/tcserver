@@ -231,25 +231,25 @@ class DecisionSupportSystemController extends Controller
     public function leavingFlow($tableMultiCriteria, $totalAlternative, $data)
     {
         $bantu = array_keys($tableMultiCriteria);
-        for ($i=0; $i < sizeof($tableMultiCriteria); $i++) { 
-            $leaving[$data[$i]->store_id] = array_sum($tableMultiCriteria[$bantu[$i]])/$totalAlternative;
+        for ($i=0; $i < sizeof($tableMultiCriteria) ; $i++) { 
+            for ($j=0; $j < sizeof($tableMultiCriteria); $j++) { 
+                $leaving[$data[$j]->store_id][$data[$i]->store_id]= $tableMultiCriteria[$bantu[$i]][$bantu[$j]];
+            }
         }
-        return $leaving;
+
+        for ($i=0; $i < sizeof($tableMultiCriteria); $i++) { 
+            $leavingFlowBackFlip[$data[$i]->store_id] = array_sum($leaving[$bantu[$i]])/$totalAlternative;
+        }
+        return $leavingFlowBackFlip;
     }
 
     public function enteringFlow($tableMultiCriteria, $totalAlternative, $data)
     {
         $bantu = array_keys($tableMultiCriteria);
-        for ($i=0; $i < sizeof($tableMultiCriteria) ; $i++) { 
-            for ($j=0; $j < sizeof($tableMultiCriteria); $j++) { 
-                $entering[$data[$j]->store_id][$data[$i]->store_id]= $tableMultiCriteria[$bantu[$i]][$bantu[$j]];
-            }
-        }
-
         for ($i=0; $i < sizeof($tableMultiCriteria); $i++) { 
-            $enteringFlowBackFlip[$data[$i]->store_id] = array_sum($entering[$bantu[$i]])/$totalAlternative;
+            $entering[$data[$i]->store_id] = array_sum($tableMultiCriteria[$bantu[$i]])/$totalAlternative;
         }
-        return $enteringFlowBackFlip;
+        return $entering;
     }
 
     public function netFlow($leaving, $entering, $tableMultiCriteria, $data)
