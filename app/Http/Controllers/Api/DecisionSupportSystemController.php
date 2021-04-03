@@ -315,6 +315,30 @@ class DecisionSupportSystemController extends Controller
             case 'Semiwash':
                 return 5;
                 break;
+            case 'Natural':
+                return 5;
+                break;
+            case 'Winey':
+                return 5;
+                break;
+            case 'Honey':
+                return 5;
+                break;
+            case 'Fine':
+                return 5;
+                break;
+            case 'Black Honey':
+                return 5;
+                break;
+            case 'Kopi Lanang':
+                return 5;
+                break;
+            case 'Luwak Liar':
+                return 5;
+                break;
+            case 'Luwak Tangkar':
+                return 5;
+                break;
             default:
                 return 5;
                 break;
@@ -328,6 +352,9 @@ class DecisionSupportSystemController extends Controller
                 return 5;
                 break;
             case 'Roasted Bean':
+                return 5;
+                break;
+            case 'Bubuk':
                 return 5;
                 break;
             default:
@@ -346,7 +373,7 @@ class DecisionSupportSystemController extends Controller
                 return 4;
                 break;
             default:
-                return 3;
+                return 5;
                 break;
         }
     }
