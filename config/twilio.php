@@ -19,7 +19,7 @@ return [
                 |
                 */
 
-                'sid' => env('TWILIO_SID', 'ACe9d1ca97cbe4fbfbce65e05cf169d0e7'),
+                'sid' => env('TWILIO_SID', ''),
 
                 /*
                 |--------------------------------------------------------------------------
@@ -30,7 +30,7 @@ return [
                 |
                 */
 
-                'token' => env('TWILIO_TOKEN', 'c2658b1591e88288ccdc97585aff4c27'),
+                'token' => env('TWILIO_TOKEN', ''),
 
                 /*
                 |--------------------------------------------------------------------------
@@ -41,7 +41,7 @@ return [
                 |
                 */
 
-                'from' => env('TWILIO_FROM', '+19046026436'),
+                'from' => env('TWILIO_FROM', ''),
             ],
         ],
     ],

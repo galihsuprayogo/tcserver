@@ -282,6 +282,43 @@ class DecisionSupportSystemController extends Controller
         ]);
     }
 
+    public function priceHelper(Request $request)
+    {
+        $prices = DB::table('products')
+                                ->join('stores', 'products.store_id', '=', 'stores.id')
+                                ->select('stores.id', 'products.price')
+                                ->where([
+                                    ['products.type', $request->type],
+                                    ['products.procedure', $request->procedure],
+                                    ['products.output', $request->output],
+                                    ['products.grade', $request->grade],
+                                ])->get();
+        
+        return response()->json([
+            'prices' => $prices
+        ]);
+    }
+
+    public function distanceHelper(Request $request)
+    {
+        $lat_position = floatval($request->lat_position);
+        $long_position = floatval($request->long_position);
+        $lat_destination = floatval($request->lat_destination);
+        $long_destination = floatval($request->long_destination);
+        
+        $theta = $long_position - $long_destination;
+        $miles = (sin(deg2rad($lat_position)) * sin(deg2rad($lat_destination))) 
+            + (cos(deg2rad($lat_position)) * cos(deg2rad($lat_destination)) * cos(deg2rad($theta)));
+        // $miles = acos($miles);
+        // $miles = rad2deg($miles);
+        // $miles = $miles * 60 * 1.1515;
+        // $kilometers = round(($miles * 1.609344),1);
+            
+        return response()->json([
+            'result' => $miles
+        ]);
+    }
+    
     public function clearHelper(Request $request)
     {
         $consumer_id = $request->consumerId;

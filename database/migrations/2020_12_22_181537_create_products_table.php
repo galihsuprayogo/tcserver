@@ -23,7 +23,6 @@ class CreateProductsTable extends Migration
             $table->bigInteger('price')->nullable();
             $table->binary('image')->nullable();
             $table->timestamps();
-
             $table->foreign('store_id')->references('id')->on('stores')->onDelete('cascade');
         });
     }

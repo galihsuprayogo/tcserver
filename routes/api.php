@@ -28,6 +28,8 @@ Route::group(['prefix' => 'auth'], function () {
     Route::get('rank', 'DecisionSupportSystemController@ranking');
     Route::post('isAvailable', 'DecisionSupportSystemController@isAvailableStore');
     Route::post('clear', 'DecisionSupportSystemController@clearHelper');
+    Route::post('disper', 'DecisionSupportSystemController@distanceHelper');
+    Route::post('prisper', 'DecisionSupportSystemController@priceHelper');
     Route::post('decode', 'StoreController@decode');
     
     Route::group(['middleware' => 'auth:api'], function () {

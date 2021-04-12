@@ -24,7 +24,6 @@ class CreatePrometheesTable extends Migration
             $table->double('price')->default(0);
             $table->double('score')->nullable();
             $table->timestamps();
-
             $table->foreign('distance_id')->references('id')->on('distances')->onDelete('cascade');
         });
     }

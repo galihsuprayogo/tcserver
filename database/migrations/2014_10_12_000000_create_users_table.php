@@ -30,7 +30,6 @@ class CreateUsersTable extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id')->default(0);
             $table->boolean('user_session')->default(false);
-
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
