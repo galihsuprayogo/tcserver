@@ -83,7 +83,7 @@ class DecisionSupportSystemController extends Controller
                     ->get();
 
         $totalAlternative = sizeof($data) - 1;
-        for ($i=0; $i < sizeof($data); $i++) {
+      for ($i=0; $i < sizeof($data); $i++) {
                 for ($j=0; $j < sizeof($data); $j++) { 
                     if($i!==$j){
                         $types[$data[$i]->store_id][$data[$j]->store_id] = collect([$data[$i]->type, $data[$j]->type, ($data[$i]->type-$data[$j]->type)]);
@@ -106,12 +106,12 @@ class DecisionSupportSystemController extends Controller
             for ($j=0; $j < sizeof($data); $j++) { 
                 if($i!==$j){
                     $tableMultiCriteria[$data[$i]->store_id][$data[$j]->store_id] = 
-                    ($types[$data[$i]->store_id][$data[$j]->store_id][3] + 
+                    round(($types[$data[$i]->store_id][$data[$j]->store_id][3] + 
                         $procedures[$data[$i]->store_id][$data[$j]->store_id][3] +
                         $outputs[$data[$i]->store_id][$data[$j]->store_id][3] +
                         $grades[$data[$i]->store_id][$data[$j]->store_id][3] +
                         $prices[$data[$i]->store_id][$data[$j]->store_id][3] +
-                        $distances[$data[$i]->store_id][$data[$j]->store_id][3])/$totalCriteria;
+                        $distances[$data[$i]->store_id][$data[$j]->store_id][3])/$totalCriteria, 9);
                 }
                 if($i==$j){
                     $tableMultiCriteria[$data[$i]->store_id][$data[$j]->store_id] = 0;
@@ -124,7 +124,11 @@ class DecisionSupportSystemController extends Controller
         $netFlows = $this->netFlow($leavingFlows, $enteringFlows, $tableMultiCriteria, $data);
 
         return response()->json([
-            'message' => 'success'
+            'message' => 'success',
+            'leaving' => $leavingFlows,
+            'entering' => $enteringFlows,
+            // 'crit' => $tableMultiCriteria,
+            'net flow' => $netFlows
         ]);
 
     }
@@ -143,18 +147,26 @@ class DecisionSupportSystemController extends Controller
 
         $collects = DB::table('products')
                                 ->join('stores', 'products.store_id', '=', 'stores.id')
-                                ->select('products.type', 'products.procedure', 'products.output', 
-                                'products.grade', 'products.price', 
-                                'stores.id', 'stores.latitude', 'stores.longitude')
+                                ->select('stores.id', 
+                                'products.grade', 'products.price', 'stores.latitude', 'stores.longitude')
                                 ->where([
                                     ['products.type', $type],
                                     ['products.procedure', $procedure],
                                     ['products.output', $output],
-                                    ['products.grade', $grade],
                                     ['products.price', '>=', $minimum],
                                     ['products.price', '<=', $maximum]
                                 ])->get();
         
+    
+        foreach ($collects as $collect) {
+          $typeExist[$collect->id] = DB::table('products')->select('type')->where('store_id', $collect->id)->groupBy('type')->pluck('type');
+          $procedureExist[$collect->id] = DB::table('products')->select('procedure')->where([['store_id', $collect->id], ['type', $type]])->groupBy('procedure')->pluck('procedure');
+          $outputExist[$collect->id] = DB::table('products')->select('output')->where([['store_id', $collect->id], ['type', $type], ['procedure', $procedure]])->groupBy('output')->pluck('output');
+        }
+       
+        $resultType = $this->initialType($typeExist, $type);
+        $resultProcedure = $this->initialProcedure($procedureExist, $procedure);
+        $resultOutput = $this->initialOutput($outputExist, $output);
         
         foreach ($collects as $collect) {
             Distance::insert([
@@ -166,11 +178,11 @@ class DecisionSupportSystemController extends Controller
 
             Promethee::insert([
                 'store_id' => $collect->id,
-                'type' => $this->initialType($collect->type),
-                'procedure' => $this->initialProcedure($collect->procedure),
-                'output' => $this->initialOutput($collect->output),
+                'type' => $resultType[$collect->id],
+                'procedure' => $resultProcedure[$collect->id],
+                'output' => $resultOutput[$collect->id],
                 'grade' => $this->initialGrade($collect->grade),
-                'price' => $collect->price
+                'price' => $this->initialPrice($collect->price) 
             ]);
         }
 
@@ -205,9 +217,10 @@ class DecisionSupportSystemController extends Controller
                 ['id', $destination->id],
                 ['consumer_id', $consumer_id],
             ])->update([
-                'distance' => $kilometers
+                'distance' => $this->initialDistance($kilometers) 
             ]);
         }
+        
     }
 
     public function calculatingAlternativeValue($params)
@@ -228,7 +241,7 @@ class DecisionSupportSystemController extends Controller
         }
     }
 
-    public function leavingFlow($tableMultiCriteria, $totalAlternative, $data)
+     public function leavingFlow($tableMultiCriteria, $totalAlternative, $data)
     {
         $bantu = array_keys($tableMultiCriteria);
         for ($i=0; $i < sizeof($tableMultiCriteria) ; $i++) { 
@@ -238,16 +251,17 @@ class DecisionSupportSystemController extends Controller
         }
 
         for ($i=0; $i < sizeof($tableMultiCriteria); $i++) { 
-            $leavingFlowBackFlip[$data[$i]->store_id] = array_sum($leaving[$bantu[$i]])/$totalAlternative;
+            $leavingFlowBackFlip[$data[$i]->store_id] = round(array_sum($leaving[$bantu[$i]])/$totalAlternative, 8);
         }
         return $leavingFlowBackFlip;
+        // return $leaving[9];
     }
 
     public function enteringFlow($tableMultiCriteria, $totalAlternative, $data)
     {
         $bantu = array_keys($tableMultiCriteria);
         for ($i=0; $i < sizeof($tableMultiCriteria); $i++) { 
-            $entering[$data[$i]->store_id] = array_sum($tableMultiCriteria[$bantu[$i]])/$totalAlternative;
+            $entering[$data[$i]->store_id] = round(array_sum($tableMultiCriteria[$bantu[$i]])/$totalAlternative, 8);
         }
         return $entering;
     }
@@ -256,9 +270,9 @@ class DecisionSupportSystemController extends Controller
     {
         $bantu = array_keys($tableMultiCriteria);
         for ($i=0; $i < sizeof($tableMultiCriteria); $i++) { 
-            $net[$data[$i]->store_id] = $leaving[$bantu[$i]] - $entering[$bantu[$i]];
+            $net[$data[$i]->store_id] = round($leaving[$bantu[$i]] - $entering[$bantu[$i]], 8);
             DB::table('promethees')->where('store_id', $data[$i]->store_id)->update([
-                'score' => $leaving[$bantu[$i]] - $entering[$bantu[$i]]
+                'score' => round($leaving[$bantu[$i]] - $entering[$bantu[$i]], 8)
             ]);
         }
         return $net;
@@ -272,16 +286,41 @@ class DecisionSupportSystemController extends Controller
                         ->join('stores', 'promethees.store_id', '=', 'stores.id')
                         ->select('stores.id', 'stores.name', 'stores.image', 'distances.latitude', 
                           'distances.longitude', 'stores.address', 'promethees.score')
-                        ->where('distances.consumer_id', $consumer_id)
-                        ->orderBy('promethees.score', 'desc')
-                        ->limit(5)
-                        ->get();
-
+                        ->where([
+                            ['distances.consumer_id', $consumer_id],
+                            ['promethees.score', '>', 0]
+                        ])->orderBy('promethees.score', 'desc')->get();
+      
         return response()->json([
             'ranking' => $ranking
         ]);
     }
 
+    public function rankHelper(Request $request)
+    {
+        $consumer_id = $request->consumerId;
+        $ranking = DB::table('distances')
+                        ->join('promethees', 'distances.id', '=', 'promethees.distance_id')
+                        ->join('stores', 'promethees.store_id', '=', 'stores.id')
+                        ->select('stores.id', 'stores.name', 'promethees.score')
+                        ->where([
+                            ['distances.consumer_id', $consumer_id],
+                        ])->orderBy('promethees.score', 'desc')->get();
+      
+        return response()->json([
+            'ranking' => $ranking
+        ]);
+    }
+    
+    public function clearHelper(Request $request)
+    {
+        $consumer_id = $request->consumerId;
+        Distance::where('consumer_id', $consumer_id)->delete();
+        return response()->json([
+            'message' => 'clear success'
+        ]);
+    }
+    
     public function priceHelper(Request $request)
     {
         $prices = DB::table('products')
@@ -319,99 +358,89 @@ class DecisionSupportSystemController extends Controller
         ]);
     }
     
-    public function clearHelper(Request $request)
+    public function initialType($datas, $type)
     {
-        $consumer_id = $request->consumerId;
-        Distance::where('consumer_id', $consumer_id)->delete();
-        return response()->json([
-            'message' => 'clear success'
-        ]);
+        $initialTypeBobot = 0.1;
+        
+        $bantus = array_keys($datas);
+        foreach($bantus as $bantu){
+            $totalType = 0;
+            foreach($datas[$bantu] as $data){
+                if($data === $type){
+                    $totalType += 0.6;
+                }
+                else{
+                    $totalType +=  0.4;
+                }
+            }
+            $total = $totalType * $initialTypeBobot;
+            $typeBobot[$bantu] = $total;
+        }
+        return $typeBobot;
     }
 
-    public function initialType($type)
+    public function initialProcedure($datas, $procedure)
     {
-        switch ($type) {
-            case 'Arabica':
-                return 5;
-                break;
-            case 'Robusta':
-                return 5;
-                break;
-            default:
-                return 5;
-                break;
+        $initialProcedureBobot = 0.1;
+   
+        $bantus = array_keys($datas);
+        foreach($bantus as $bantu){
+            $totalProcedure = 0;
+            foreach($datas[$bantu] as $data){
+                if($data === $procedure){
+                    $totalProcedure += 0.2;
+                } else{
+                    $totalProcedure += 0.08;
+                }
+            }
+            $total = $totalProcedure * $initialProcedureBobot;
+            $procedureBobot[$bantu] = $total;
         }
+        return $procedureBobot;
     }
 
-    public function initialProcedure($procedure)
+    public function initialOutput($datas, $output)
     {
-        switch ($procedure) {
-            case 'Fullwash':
-                return 5;
-                break;
-            case 'Semiwash':
-                return 5;
-                break;
-            case 'Natural':
-                return 5;
-                break;
-            case 'Winey':
-                return 5;
-                break;
-            case 'Honey':
-                return 5;
-                break;
-            case 'Fine':
-                return 5;
-                break;
-            case 'Black Honey':
-                return 5;
-                break;
-            case 'Kopi Lanang':
-                return 5;
-                break;
-            case 'Luwak Liar':
-                return 5;
-                break;
-            case 'Luwak Tangkar':
-                return 5;
-                break;
-            default:
-                return 5;
-                break;
+        $initialOutputBobot = 0.1;
+        
+        $bantus = array_keys($datas);
+        foreach($bantus as $bantu){
+            $totalOutput = 0;
+            foreach($datas[$bantu] as $data){
+                if($data === $output){
+                    $totalOutput += 0.5;
+                }else{
+                    $totalOutput += 0.25;
+                }
+            }
+            $total = $totalOutput * $initialOutputBobot;
+            $outputBobot[$bantu] = $total;
         }
-    }
-
-    public function initialOutput($output)
-    {
-        switch ($output) {
-            case 'Green Bean':
-                return 5;
-                break;
-            case 'Roasted Bean':
-                return 5;
-                break;
-            case 'Bubuk':
-                return 5;
-                break;
-            default:
-                return 5;
-                break;
-        }
+        return $outputBobot;
     }
 
     public function initialGrade($grade)
     {
         switch ($grade) {
             case 'A':
-                return 5;
+                return 0.6 * 0.2;
                 break;
             case 'B':
-                return 4;
+                return 0.4 * 0.2;
                 break;
             default:
-                return 5;
+                return 0.2;
                 break;
         }
+    }
+    
+    public function initialPrice($price)
+    {
+    	return $price * 0.25;
+    }
+    
+    public function initialDistance($distance)
+    {
+    	return $distance * 0.25;
     }
 }

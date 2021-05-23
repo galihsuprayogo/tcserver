@@ -24,13 +24,14 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('verify', 'AuthController@verify');
     Route::post('session', 'AuthController@session');
     Route::get('minMax', 'DecisionSupportSystemController@minMax');
-    Route::post('index', 'DecisionSupportSystemController@indexPreferencesMultiCriteria');
-    Route::get('rank', 'DecisionSupportSystemController@ranking');
-    Route::post('isAvailable', 'DecisionSupportSystemController@isAvailableStore');
+    Route::post('index','DecisionSupportSystemController@indexPreferencesMultiCriteria');
+    Route::post('rank', 'DecisionSupportSystemController@ranking');
+    Route::post('isAvailable','DecisionSupportSystemController@isAvailableStore');
     Route::post('clear', 'DecisionSupportSystemController@clearHelper');
     Route::post('disper', 'DecisionSupportSystemController@distanceHelper');
     Route::post('prisper', 'DecisionSupportSystemController@priceHelper');
     Route::post('decode', 'StoreController@decode');
+    Route::post('rankper', 'DecisionSupportSystemController@rankHelper');
     
     Route::group(['middleware' => 'auth:api'], function () {
         Route::post('store', 'StoreController@store');

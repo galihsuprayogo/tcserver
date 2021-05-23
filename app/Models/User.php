@@ -17,6 +17,8 @@ class User extends Authenticatable
      *
      * @var array
      */
+    protected $table = 'petanikopi';
+    
     protected $fillable = [
         'name',
         'phone_number',

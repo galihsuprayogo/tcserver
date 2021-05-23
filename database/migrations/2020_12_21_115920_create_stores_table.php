@@ -22,7 +22,7 @@ class CreateStoresTable extends Migration
             $table->string('latitude')->nullable();
             $table->string('longitude')->nullable();
             $table->timestamps();
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('petanikopi')->onDelete('cascade');
         });
     }
 

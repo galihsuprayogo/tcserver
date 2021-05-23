@@ -20,16 +20,16 @@ class ProductController extends Controller
         $price = $request->price;
         $photo = $request->photo;
 
-        $profile_address = DB::table('users')
-                        ->join('stores', 'users.id', '=', 'stores.user_id')
-                        ->where('users.id', $user->id)
+        $profile_address = DB::table('petanikopi')
+                        ->join('stores', 'petanikopi.id', '=', 'stores.user_id')
+                        ->where('petanikopi.id', $user->id)
                         ->pluck('stores.address');
 
         $profile_address_new = $profile_address[0];
 
-        $profile = DB::table('users')
-                            ->join('stores', 'users.id', '=', 'stores.user_id')
-                            ->where('users.id', $user->id)
+        $profile = DB::table('petanikopi')
+                            ->join('stores', 'petanikopi.id', '=', 'stores.user_id')
+                            ->where('petanikopi.id', $user->id)
                             ->pluck('stores.id');
 
         $profile_id = $profile[0];
@@ -99,9 +99,9 @@ class ProductController extends Controller
     {
         $id = $request->id;
         $user = $request->user();
-        $profile = DB::table('users')
-                        ->join('stores', 'users.id', '=', 'stores.user_id')
-                        ->where('users.id', $user->id)
+        $profile = DB::table('petanikopi')
+                        ->join('stores', 'petanikopi.id', '=', 'stores.user_id')
+                        ->where('petanikopi.id', $user->id)
                         ->pluck('stores.id');
         $profile_id = $profile[0];
 
@@ -165,9 +165,9 @@ class ProductController extends Controller
             ]);
 
             $user = $request->user();
-            $profile = DB::table('users')
-                                ->join('stores', 'users.id', '=', 'stores.user_id')
-                                ->where('users.id', $user->id)
+            $profile = DB::table('petanikopi')
+                                ->join('stores', 'petanikopi.id', '=', 'stores.user_id')
+                                ->where('petanikopi.id', $user->id)
                                 ->pluck('stores.id');
             $profile_id = $profile[0];
 
@@ -195,9 +195,9 @@ class ProductController extends Controller
         $price = $request->price;
         $image = $request->photo;
     
-        $profile = DB::table('users')
-                        ->join('stores', 'users.id', '=', 'stores.user_id')
-                        ->where('users.id', $user->id)
+        $profile = DB::table('petanikopi')
+                        ->join('stores', 'petanikopi.id', '=', 'stores.user_id')
+                        ->where('petanikopi.id', $user->id)
                         ->pluck('stores.id');
         $profile_id = $profile[0];
 

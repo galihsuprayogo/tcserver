@@ -20,7 +20,7 @@ class AuthController extends Controller
         
         $validator = Validator::make($req->all(), [
             'name' => 'required|string',
-            'phone_number' => 'required|string|min:10|max:15|unique:users',
+            'phone_number' => 'required|string|min:10|max:15|unique:petanikopi',
         ]);
 
         if($validator->fails()){
@@ -37,10 +37,10 @@ class AuthController extends Controller
             'email' => $uf->email,
             'password' => $uf->password,
         ]);
-        
+
         $user->save();
 
-        $id = DB::table('users')->where('phone_number', $req->phone_number)->pluck('id');
+        $id = DB::table('petanikopi')->where('phone_number', $req->phone_number)->pluck('id');
         $new_id = $id['0'];
         
         $store = new Store([
@@ -74,11 +74,11 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if(DB::table('users')->where('phone_number', $req->phone_number)->exists()){
+        if(DB::table('petanikopi')->where('phone_number', $req->phone_number)->exists()){
   
             $otp = mt_rand(1000, 9999);
             // Twilio::message('+62'.(int)$req->phone_number, 'KODE OTP COFFEE KAMU '. $otp);
-            DB::table('users')->where('phone_number', $req->phone_number)->update(['phone_otp' => $otp]);
+            DB::table('petanikopi')->where('phone_number', $req->phone_number)->update(['phone_otp' => $otp]);
 
             return response()->json([
                 'message' => 'Login Success'
@@ -103,9 +103,9 @@ class AuthController extends Controller
             ], 200);
         }
 
-        if(DB::table('users')->where('phone_otp', $req->phone_otp)->exists())
+        if(DB::table('petanikopi')->where('phone_otp', $req->phone_otp)->exists())
         {
-            $id = DB::table('users')->where('phone_otp', $req->phone_otp)->pluck('id');
+            $id = DB::table('petanikopi')->where('phone_otp', $req->phone_otp)->pluck('id');
             $new_id = $id['0'];
             $user = User::find($new_id);
 
@@ -178,7 +178,7 @@ class AuthController extends Controller
     public function logout(Request $req)
     {
         $user = $req->user();
-        DB::table('users')->where('phone_number', $user->phone_number)
+        DB::table('petanikopi')->where('phone_number', $user->phone_number)
         ->update(['phone_otp' => null]);
         DB::table('sessions')->where('user_id', $user->id)->update([
             'user_session' => false
